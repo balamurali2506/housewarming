@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Opening Invitation</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #ebe7e7;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .container {
+      position: relative;
+      width: 300px;
+      height: 400px;
+      perspective: 1000px;
+    }
+
+    .door {
+      position: absolute;
+      width: 50%;
+      height: 100%;
+      background: #bd765f;
+      border: 2px solid #3e2723;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.6);
+      transform-origin: left center;
+      transition: transform 2s ease-in-out;
+      z-index: 2;
+      border-radius: 10px;
+    }
+    .door.right { left: 50%; transform-origin: right center; }
+    .container.active .door.left { transform: rotateY(-100deg); }
+    .container.active .door.right { transform: rotateY(100deg); }
+
+    .title {
+      position: absolute;
+      bottom: -60px;
+      width: 100%;
+      text-align: center;
+      font-size: 1.5rem;
+      font-family: 'Segoe UI', sans-serif;
+      color: #0c0909;
+    }
+
+    #doorVideo {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+      z-index: 1;
+      border-radius: 10px;
+    }
+
+    /* Falling petals */
+    .petal {
+      position: absolute;
+      top: -50px;
+      width: 30px;
+      height: 30px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      opacity: 0.9;
+      animation: fall 10s linear infinite;
+      pointer-events: none;
+    }
+    @keyframes fall {
+      0% { transform: translateY(0) rotate(0deg); }
+      100% { transform: translateY(110vh) rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+<audio id="doorSound" src="https://www.soundjay.com/mechanical/sounds/door-open-01a.mp3" preload="auto"></audio>
+<audio id="bgMusic" src="https://www.bensound.com/bensound-music/bensound-sunny.mp3" preload="auto" loop></audio>
+
+<div class="container" id="doorContainer">
+  <div class="door left"></div>
+  <div class="door right"></div>
+  <video id="doorVideo" src="km_20250824_1440p(1).mp4" playsinline muted></video>
+  <div class="title">Tap to Open Invitation</div>
+</div>
+
+<script>
+  const container = document.getElementById('doorContainer');
+  const doorSound = document.getElementById('doorSound');
+  const bgMusic = document.getElementById('bgMusic');
+  const doorVideo = document.getElementById('doorVideo');
+  let petalsIntervalStarted = false;
+
+  // Restore saved music time if exists
+  const savedTime = localStorage.getItem('musicTime');
+  if (savedTime) {
+    bgMusic.currentTime = parseFloat(savedTime);
+  }
+
+  // Resume music if user taps after refresh
+  document.body.addEventListener('click', resumeMusicOnce, { once: true });
+  document.body.addEventListener('touchstart', resumeMusicOnce, { once: true });
+
+  function resumeMusicOnce() {
+    const wasStarted = localStorage.getItem("musicStarted");
+    if (wasStarted === "true") {
+      bgMusic.volume = 0.5;
+      bgMusic.play().catch(() => console.log("Autoplay blocked"));
+    }
+  }
+
+  // Door open logic
+  container.addEventListener('click', openDoor);
+  container.addEventListener('touchstart', openDoor);
+
+  function openDoor() {
+    if (!container.classList.contains('active')) {
+      container.classList.add('active');
+      doorSound.play();
+
+      bgMusic.volume = 0.5;
+      bgMusic.play();
+      localStorage.setItem("musicStarted", "true");
+
+      doorVideo.style.display = "block";
+      doorVideo.play();
+
+      if (!petalsIntervalStarted) {
+        petalsIntervalStarted = true;
+        startFallingPetals();
+      }
+
+      doorVideo.onended = () => window.location.href = "page.html";
+    }
+  }
+
+  function startFallingPetals() {
+    setInterval(() => {
+      const petal = document.createElement('div');
+      petal.className = 'petal';
+      petal.style.left = Math.random() * 100 + 'vw';
+      petal.style.animationDuration = 8 + Math.random() * 5 + 's';
+      petal.style.opacity = Math.random();
+      petal.style.backgroundImage = "url('set-small-flowers-transparent-background-psd-file_2.png')";
+      petal.style.transform = `scale(${0.6 + Math.random()}) rotate(${Math.random() * 360}deg)`;
+      document.body.appendChild(petal);
+      setTimeout(() => petal.remove(), 12000);
+    }, 300);
+  }
+
+  // Save music progress
+  setInterval(() => {
+    if (!isNaN(bgMusic.currentTime)) {
+      localStorage.setItem('musicTime', bgMusic.currentTime);
+    }
+  }, 2000);
+</script>
+
+</body>
+</html>
